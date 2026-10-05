@@ -1,0 +1,104 @@
+# Validation-only environment for the isolation suite. No host ports are
+# published. PostgreSQL instances are initialized by the role script of a
+# freshly RENDERED destination (ISO_RENDERED), so the template itself is under
+# test; MinIO is built from the rendered minio.Dockerfile.
+name: ${ISO_PROJECT:?ISO_PROJECT is required}
+
+x-postgres: &postgres
+  image: pgvector/pgvector:0.8.7-pg17
+  environment:
+    POSTGRES_PASSWORD: ${ISO_SUPERUSER_PASSWORD:?}
+    POSTGRES_DB: ${ISO_DB:?}
+    DATABASE_NAME: ${ISO_DB:?}
+    DB_MIGRATOR_PASSWORD: ${ISO_MIGRATOR_PASSWORD:?}
+    DB_RUNTIME_PASSWORD: ${ISO_RUNTIME_PASSWORD:?}
+    DB_RETENTION_PASSWORD: ${ISO_RETENTION_PASSWORD:?}
+  volumes:
+    - ${ISO_RENDERED:?}/infra/postgres/init:/docker-entrypoint-initdb.d:ro
+    - ${ISO_SQL:?}:/sql:ro
+  healthcheck:
+    # TCP readiness: during init the server listens on the socket only.
+    test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U postgres -d \"$${POSTGRES_DB}\""]
+    interval: 2s
+    timeout: 3s
+    retries: 60
+  networks: [iso]
+
+services:
+  pg:
+    <<: *postgres
+  pg-restore:
+    <<: *postgres
+
+  minio:
+    build:
+      context: ${ISO_RENDERED:?}/infra/docker
+      dockerfile: minio.Dockerfile
+      target: server
+    command: ["server", "/data", "--address", ":9000", "--console-address", ":9001"]
+    environment:
+      MINIO_ROOT_USER: minio-root
+      MINIO_ROOT_PASSWORD: ${ISO_MINIO_ROOT_PASSWORD:?}
+    healthcheck:
+      test: ["CMD", "/usr/bin/mc", "ready", "local"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+    networks: [iso]
+
+  minio-init:
+    build:
+      context: ${ISO_RENDERED:?}/infra/docker
+      dockerfile: minio.Dockerfile
+      target: init
+    environment:
+      MINIO_ROOT_USER: minio-root
+      MINIO_ROOT_PASSWORD: ${ISO_MINIO_ROOT_PASSWORD:?}
+      OBJECT_STORE_BUCKET: ${ISO_BUCKET:?}
+      OBJECT_STORE_ACCESS_KEY: ${ISO_S3_ACCESS_KEY:?}
+      OBJECT_STORE_SECRET_KEY: ${ISO_S3_SECRET_KEY:?}
+    volumes:
+      - ${ISO_RENDERED:?}/infra/minio/init.sh:/init.sh:ro
+    entrypoint: ["/bin/sh", "/init.sh"]
+    depends_on:
+      minio:
+        condition: service_healthy
+    networks: [iso]
+
+  runner:
+    profiles: [run]
+    image: golang:1.27.1-alpine
+    working_dir: /src
+    environment:
+      GOTOOLCHAIN: local
+      GOFLAGS: -buildvcs=false -mod=readonly
+      ARCHETYPE_REQUIRE_INTEGRATION: "1"
+      ARCHETYPE_LABEL_FILE: /out/labels.tsv
+      ARCHETYPE_REFERENCES_DIR: /references
+      ARCHETYPE_PG_HOST: ${ISO_PG_HOST:-pg}
+      ARCHETYPE_DB_NAME: ${ISO_DB:?}
+      ARCHETYPE_PG_SUPERUSER_PASSWORD: ${ISO_SUPERUSER_PASSWORD:?}
+      ARCHETYPE_DB_MIGRATOR_PASSWORD: ${ISO_MIGRATOR_PASSWORD:?}
+      ARCHETYPE_DB_RUNTIME_PASSWORD: ${ISO_RUNTIME_PASSWORD:?}
+      ARCHETYPE_DB_RETENTION_PASSWORD: ${ISO_RETENTION_PASSWORD:?}
+      ARCHETYPE_S3_ENDPOINT: http://minio:9000
+      ARCHETYPE_S3_REGION: us-east-1
+      ARCHETYPE_S3_BUCKET: ${ISO_BUCKET:?}
+      ARCHETYPE_S3_ACCESS_KEY: ${ISO_S3_ACCESS_KEY:?}
+      ARCHETYPE_S3_SECRET_KEY: ${ISO_S3_SECRET_KEY:?}
+    volumes:
+      - ${ISO_MODULE:?}:/src:ro
+      - ${ISO_REFERENCES:?}:/references:ro
+      - ${ISO_OUT:?}:/out
+      - project-archetype-gomod:/go/pkg/mod
+      - project-archetype-gobuild:/root/.cache/go-build
+    networks: [iso]
+
+networks:
+  iso: {}
+
+volumes:
+  project-archetype-gomod:
+    name: project-archetype-gomod
+  project-archetype-gobuild:
+    name: project-archetype-gobuild

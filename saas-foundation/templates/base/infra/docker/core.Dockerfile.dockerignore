@@ -1,0 +1,4 @@
+.git
+# Local environment files may hold secrets.
+.env
+.env.*

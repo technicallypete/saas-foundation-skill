@@ -1,0 +1,6 @@
+{
+  "product_name": "Sample Atlas",
+  "platform_base_domain": "atlas.example.test",
+  "database_name": "atlas_app",
+  "intelligence_enabled": true
+}

@@ -1,0 +1,14 @@
+# Secret scanning for this repository (checks profile: secret-scan).
+# .env holds local secrets by design and is never committed; it is excluded.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "local-only files that are never committed"
+paths = [
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\.local$''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)\.archetype/outputs/[^/]+/proposed/''',
+]

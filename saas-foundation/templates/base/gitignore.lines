@@ -1,0 +1,4 @@
+# Lines the archetype requires in .gitignore (merged with ensure-lines; never removes existing lines).
+.env
+.env.local
+.archetype/outputs/*/proposed/

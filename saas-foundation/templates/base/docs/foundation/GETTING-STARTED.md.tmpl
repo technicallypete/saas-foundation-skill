@@ -1,0 +1,75 @@
+# Getting started
+
+Everything runs in containers. Host prerequisites: Git, Docker Engine or Docker Desktop with Compose 2.24 or later (with WSL integration on Windows), and a POSIX shell. No host Go, Python, Node, PostgreSQL, Redis or object-store server is needed.
+
+Product, domain and database identity come from `.env` (see `.env.example`). Nothing in source code or these documents depends on their values; changing `PRODUCT_NAME` or `PLATFORM_BASE_DOMAIN` and restarting renames or re-domains the stack without a rebuild.
+
+## 1. Configure
+
+```sh
+cp .env.example .env
+```
+
+Fill in every empty secret in `.env` with a locally generated **hexadecimal** value of at least 16 characters, for example `head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'`. Hex keeps secrets URL-safe (the MinIO init job passes its root credential in a URL). Never commit `.env`.
+
+Database role passwords and `DATABASE_NAME` take effect only when the PostgreSQL volume is first initialized. If you change them later, recreate the volume with `down -v` (this deletes local data), otherwise core readiness reports `postgres` as unavailable.
+
+## 2. Start
+
+The commands below are executed verbatim by the archetype validation harness. Run them from the repository root.
+
+<!-- archetype:start -->
+```sh
+docker compose --env-file .env -f infra/compose/local.yml up -d --build --wait
+```
+
+Host ports bind to `BIND_ADDRESS` (loopback by default): web `WEB_PORT`, core `CORE_PORT`{{if .IntelligenceEnabled}}, intelligence `INTELLIGENCE_PORT`{{end}}, PostgreSQL `POSTGRES_PORT`, Redis `REDIS_PORT`, MinIO API `MINIO_API_PORT` and console `MINIO_CONSOLE_PORT`. Containers reach each other by service name on conventional internal ports.
+
+- Liveness: `GET /healthz` (core), `GET /api/health` (web){{if .IntelligenceEnabled}}, `GET /healthz` (intelligence){{end}}.
+- Readiness: `GET /readyz` (core: PostgreSQL, Redis and the object store gate readiness{{if .IntelligenceEnabled}}; intelligence is reported but never gates it{{end}}), `GET /api/ready` (web: requires core).
+
+## 3. Check
+
+Formatting, vet, unit tests, lint, type checks and secret scanning, all in containers and without network access:
+
+<!-- archetype:check -->
+```sh
+docker compose --env-file .env -f infra/compose/local.yml --profile checks run --rm --build core-check
+docker compose --env-file .env -f infra/compose/local.yml --profile checks run --rm --build web-check
+{{- if .IntelligenceEnabled}}
+docker compose --env-file .env -f infra/compose/local.yml --profile checks run --rm --build intelligence-check
+{{- end}}
+docker compose --env-file .env -f infra/compose/local.yml --profile checks run --rm secret-scan
+```
+
+## 4. Stop
+
+<!-- archetype:stop -->
+```sh
+docker compose --env-file .env -f infra/compose/local.yml down
+```
+
+`down` keeps the PostgreSQL and MinIO volumes. To destroy all local data as well, add `-v`. Redis is ephemeral by design and starts empty every time.
+
+To remove everything the stack built as well (images and volumes): `docker compose --env-file .env -f infra/compose/local.yml down -v --rmi local`. The archetype renderer also keeps a small cache volume, `project-archetype-render-cache`, which `docker volume rm project-archetype-render-cache` removes.
+
+## Verify health
+
+`up --wait` exits 0 only when every long-running service is healthy; the one-shot `minio-init` job correctly ends as "Exited (0)". To inspect readiness without host tools:
+
+```sh
+docker run --rm --network "container:$(docker compose --env-file .env -f infra/compose/local.yml ps -q core)" busybox:1.37.0 wget -qO- http://127.0.0.1:8180/readyz
+```
+
+Every dependency should report `ok`. On first use the start command downloads images and compiles MinIO from source, which takes several minutes; later starts reuse the build cache.
+
+## Continuous integration
+
+The checks need a complete `.env` because Compose resolves every required value. In CI, create `.env` from `.env.example` with freshly generated throwaway secrets (never real ones), then run the `check` block.
+
+## Development notes
+
+- Hot reload is a later foundation step: add Compose `develop.watch` rules or bind mounts for `web/` and `core/` with container-owned dependency directories. Never require host runtimes for it.
+- Database roles: `infra/postgres/init/10-roles.sh` creates `<db>_owner` (NOLOGIN), `<db>_migrator`, `<db>_runtime` and `<db>_retention` on first initialization. Core connects as `<db>_runtime`, which is never a superuser, never has BYPASSRLS and never owns tables.
+- Object storage: local MinIO is built from the final upstream source release (`infra/docker/minio.Dockerfile`) because upstream no longer publishes maintained images. It is for local development only; see `docs/foundation/VENDORS.md`.
+- Next steps: `docs/foundation/FOLLOW-UP.md` lists the foundation stages that remain to be implemented.

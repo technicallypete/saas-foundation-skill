@@ -1,0 +1,86 @@
+# Canonical project configuration. This is the single source of configuration
+# for infra/compose/local.yml: copy it to .env, then fill in every empty
+# secret with a locally generated value. Never commit .env.
+#
+# Product, domain and database identity live ONLY in this file. Source code,
+# Compose and documentation resolve them at runtime from these variables, so
+# the product can be renamed or re-domained without editing source.
+
+# --- Product identity and domains -------------------------------------------
+PRODUCT_NAME="{{.ProductName}}"
+PLATFORM_BASE_DOMAIN={{.PlatformBaseDomain}}
+CUSTOM_DOMAIN_CNAME_TARGET={{.CustomDomainCNAMETarget}}
+DATABASE_NAME={{.DatabaseName}}
+COMPOSE_PROJECT_NAME={{.ProjectSlug}}
+APP_ENV=development
+# Host-published ports bind here. Keep loopback for local development.
+BIND_ADDRESS=127.0.0.1
+
+# --- Host ports (conventional port + 100 where a standard exists) ------------
+WEB_PORT={{.Ports.Web}}
+CORE_PORT={{.Ports.Core}}
+{{- if .IntelligenceEnabled}}
+INTELLIGENCE_PORT={{.Ports.Intelligence}}
+{{- end}}
+POSTGRES_PORT={{.Ports.Postgres}}
+REDIS_PORT={{.Ports.Redis}}
+MINIO_API_PORT={{.Ports.MinioAPI}}
+MINIO_CONSOLE_PORT={{.Ports.MinioConsole}}
+
+# --- Internal wiring (container-to-container; conventional internal ports) --
+CORE_INTERNAL_URL=http://core:8180
+{{- if .IntelligenceEnabled}}
+INTELLIGENCE_URL=http://intelligence:8000
+{{- end}}
+REDIS_HOST=redis
+REDIS_PORT_INTERNAL=6379
+OBJECT_STORE_ENDPOINT=http://minio:9000
+OBJECT_STORE_REGION=us-east-1
+OBJECT_STORE_BUCKET={{.ProjectSlug}}-objects
+OBJECT_STORE_FORCE_PATH_STYLE=true
+OBJECT_STORE_ACCESS_KEY=core-service
+MINIO_ROOT_USER=minio-root
+
+# --- Secrets: empty here, required at startup -------------------------------
+# Generate locally as HEX (URL-safe), at least 16 characters, for example:
+#   head -c 24 /dev/urandom | od -An -tx1 | tr -d ' \n'
+# POSTGRES_SUPERUSER_PASSWORD is used only by database initialization.
+POSTGRES_SUPERUSER_PASSWORD=
+DB_MIGRATOR_PASSWORD=
+DB_RUNTIME_PASSWORD=
+DB_RETENTION_PASSWORD=
+REDIS_PASSWORD=
+MINIO_ROOT_PASSWORD=
+OBJECT_STORE_SECRET_KEY=
+{{- if .IntelligenceEnabled}}
+INTELLIGENCE_SERVICE_TOKEN=
+{{- end}}
+{{- if .IntelligenceEnabled}}
+
+# --- AI model configuration: AI_MODEL_<CAPABILITY>=<provider>:<model> -------
+# A capability is enabled only when its variable is set. Fallbacks use the same
+# provider:model syntax, comma separated. Name the model provider, never the
+# gateway. Commented lines are SAMPLES ONLY, not claims of model availability.
+{{- range .AIModels}}
+AI_MODEL_{{upper .Capability}}={{.Primary}}
+{{- if .Fallbacks}}
+AI_MODEL_{{upper .Capability}}_FALLBACKS={{join .Fallbacks ","}}
+{{- end}}
+{{- end}}
+{{- if not .AIModels}}
+# AI_MODEL_CHAT=<provider>:<model>
+# AI_MODEL_FAST=<provider>:<model>
+# AI_MODEL_REASONING=<provider>:<model>
+# AI_MODEL_EXTRACTION=<provider>:<model>
+# AI_MODEL_EMBEDDING=<provider>:<model>
+# AI_MODEL_CHAT_FALLBACKS=<provider>:<model>,<provider>:<model>
+{{- end}}
+# Gateway credential (secret). Optional at startup; required only for live calls.
+OPENROUTER_API_KEY=
+{{- end}}
+
+# --- Identity provider (integration is a later foundation stage) ------------
+IDENTITY_PROVIDER={{.IdentityProvider}}
+# IDENTITY_ISSUER_URL=
+# IDENTITY_CLIENT_ID=
+# IDENTITY_CLIENT_SECRET=

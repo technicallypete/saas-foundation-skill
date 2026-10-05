@@ -1,0 +1,10 @@
+{
+  "product_name": "Harbor Desk",
+  "platform_base_domain": "harbor.example.org",
+  "custom_domain_cname_target": "domains.harbor.example.org",
+  "database_name": "harbor_desk",
+  "intelligence_enabled": false,
+  "identity_provider": "keycloak",
+  "production_object_store": "r2",
+  "ports": {"web": 3200, "core": 8280, "postgres": 5632, "redis": 6579, "minio_api": 9200, "minio_console": 9201}
+}

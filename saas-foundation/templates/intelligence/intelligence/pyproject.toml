@@ -1,0 +1,39 @@
+[project]
+name = "intelligence"
+version = "0.1.0"
+description = "Internal inference service: model resolution, gateway adapters and typed streaming."
+requires-python = ">=3.13"
+dependencies = [
+    "fastapi>=0.142.2,<0.143",
+    "uvicorn>=0.54.0,<0.55",
+    "jsonschema>=4.26.0,<5",
+    "httpx>=0.28.1,<0.29",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1,<10",
+    "ruff>=0.16.10,<0.17",
+]
+
+# Not an installable distribution: modules live directly under src/ and run
+# with PYTHONPATH=src (see the archetype's packaging exception).
+[tool.uv]
+package = false
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-p no:cacheprovider"
+
+[tool.ruff]
+target-version = "py313"
+line-length = 100
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "S", "SIM", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests use assert and synthetic fixture tokens by design.
+"tests/**" = ["S101", "S105", "S106", "S603"]

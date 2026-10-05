@@ -1,0 +1,6 @@
+{
+  "product_name": "Example Product",
+  "platform_base_domain": "example.test",
+  "database_name": "example_app",
+  "intelligence_enabled": false
+}

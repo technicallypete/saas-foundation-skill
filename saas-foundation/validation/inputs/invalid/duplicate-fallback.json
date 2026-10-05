@@ -1,0 +1,1 @@
+{"product_name":"A","platform_base_domain":"a.example.test","database_name":"a_app","intelligence_enabled":true,"ai_models":{"chat":"vendor-a:model-1","chat_fallbacks":"vendor-b:model-2,vendor-b:model-2"}}

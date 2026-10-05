@@ -1,0 +1,106 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:contracts:intelligence:execution-envelope:v1",
+  "title": "Execution envelope",
+  "description": "Authorized execution request issued by core to the intelligence service. Core resolves tenant scope and authority; intelligence may not modify or widen the envelope. Tenant and user identifiers are attribution for prompt and context construction only. The envelope never carries credentials.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "request_id",
+    "trace_id",
+    "capability",
+    "authorization_ref",
+    "organization_id",
+    "user_id",
+    "allowed_tools",
+    "deadline",
+    "context_refs",
+    "input"
+  ],
+  "properties": {
+    "request_id": { "$ref": "#/$defs/request_id" },
+    "trace_id": { "$ref": "#/$defs/trace_id" },
+    "capability": { "$ref": "#/$defs/capability" },
+    "authorization_ref": {
+      "description": "Opaque reference to the authorization decision core made for this execution. Not a credential.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "organization_id": { "$ref": "#/$defs/uuid" },
+    "group_id": { "$ref": "#/$defs/uuid" },
+    "business_entity_id": { "$ref": "#/$defs/uuid" },
+    "user_id": { "$ref": "#/$defs/uuid" },
+    "allowed_tools": {
+      "description": "Tools this execution may use, each with the highest permitted level.",
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["name", "level"],
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-z0-9_.-]{1,128}$" },
+          "level": { "enum": ["read", "propose", "commit"] }
+        }
+      }
+    },
+    "deadline": {
+      "description": "Absolute RFC 3339 instant after which the execution must not start or continue.",
+      "type": "string",
+      "format": "date-time",
+      "pattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}(\\.[0-9]{1,9})?(Z|[+-][0-9]{2}:[0-9]{2})$"
+    },
+    "context_refs": {
+      "description": "References to context core has already filtered for this execution.",
+      "type": "array",
+      "maxItems": 256,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "ref"],
+        "properties": {
+          "kind": { "type": "string", "pattern": "^[a-z][a-z0-9_.-]{0,63}$" },
+          "ref": { "type": "string", "minLength": 1, "maxLength": 256 }
+        }
+      }
+    },
+    "callback_grant_ref": {
+      "description": "Optional opaque, short-lived, audience-bound reference core reauthorizes on every callback. Not a credential.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["messages"],
+      "properties": {
+        "messages": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 256,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["role", "content"],
+            "properties": {
+              "role": { "enum": ["system", "user", "assistant"] },
+              "content": { "type": "string", "maxLength": 200000 }
+            }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "request_id": { "type": "string", "pattern": "^[A-Za-z0-9._-]{8,64}$" },
+    "trace_id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+    "capability": { "enum": ["chat", "fast", "reasoning", "extraction", "embedding"] },
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    }
+  }
+}

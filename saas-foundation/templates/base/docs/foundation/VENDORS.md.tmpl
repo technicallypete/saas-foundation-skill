@@ -1,0 +1,18 @@
+# Vendor and component inventory
+
+A starting inventory for vendor-management and SOC 2 readiness evidence. Keep it current as components are added, upgraded or removed; record data handling and owners before production use. This inventory is an engineering control, not a compliance claim.
+
+| Component | Role | Where | Licence / status notes | Data handled | Status |
+|---|---|---|---|---|---|
+| PostgreSQL (`pgvector/pgvector:0.8.7-pg17`) | Durable system of record; row-level security | `postgres` service | PostgreSQL licence; pgvector extension available | All durable tenant data | Local development; production provider to be chosen |
+| Redis (`redis:8.10.2-alpine`) | Ephemeral state and cache only | `redis` service | Redis 7.4+ is RSALv2/SSPLv1, Redis 8 adds AGPLv3; review licence fit before production | Ephemeral only; never the system of record | Local development |
+| MinIO server `RELEASE.2025-10-15T17-29-55Z` and `mc` `RELEASE.2025-08-13T08-35-41Z`, built from source | Local S3-compatible object store behind the `ObjectStore` boundary | `minio`, `minio-init` services | AGPL-3.0. Upstream community edition is archived and distributed as source only; no further security fixes. Local development and validation only | Local test objects | Local development only; re-evaluate before any non-local use |
+| Production object store: `{{.ProductionObjectStore}}` | S3-compatible production storage behind `ObjectStore` | Configuration only | To be reviewed at the storage foundation stage | Tenant binaries | Planned; not provisioned |
+| Identity provider: `{{.IdentityProvider}}` | Global identity, sessions, MFA/SSO | Configuration only | No custom authentication provider is built | Identity attributes | Planned; not integrated |
+{{- if .IntelligenceEnabled}}
+| OpenRouter (model gateway) | Default `ModelGateway` adapter in `intelligence` | `intelligence` service (adapter only) | External processor; review terms, data retention and sub-processors | Prompts and completions when live calls are enabled; observability excludes content by default | Adapter contract only; no live traffic configured |
+| FastAPI, Uvicorn, uv | Internal inference service runtime | `intelligence` service | MIT / BSD / Apache-2.0 | Execution envelopes from core | Local development |
+{{- end}}
+| Go toolchain (`golang:1.27.1-alpine`), distroless static base | Core build and runtime images | `core` | BSD / Apache-2.0 | None at build time | Local development |
+| Node.js (`node:24-slim`), Next.js, React, Tailwind CSS | Web build and runtime | `web` | MIT | Rendered pages; no secrets | Local development |
+| gitleaks (`zricethezav/gitleaks:v8.30.1`) | Secret scanning in the checks profile | `secret-scan` | MIT | Repository contents (read-only, no network) | Local development and CI |

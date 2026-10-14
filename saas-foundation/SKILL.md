@@ -84,6 +84,13 @@ Paths are relative to this Skill's directory. Follow [checklists/invocation.md](
 - **Exit codes:** `0` success; `1` internal error; `2` invalid input or unsafe destination (nothing written); `3` rendered with conflicts to reconcile.
 - **Repeat runs:** with the same inputs and an unchanged destination, every path is `unchanged` and nothing is written.
 
+## Management skill composition
+
+When used with `sdlc-management` (or its Restruct SDLC successor), that skill owns delivery lifecycle,
+budgets, provenance, validation sequencing and cleanup. This skill retains its architectural, security
+and renderer-safety constraints; management policy cannot waive them. No management skill is required
+to run this package. See [verification guidance](checklists/verification.md#proportionate-validation-and-closeout).
+
 ## Verification
 
 - In a generated project: the `check` block of `docs/foundation/GETTING-STARTED.md` (formatting, vet, unit tests, lint, type checks, secret scan; containerized, no network).

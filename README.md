@@ -40,6 +40,14 @@ Ask the agent to use **saas-foundation** to bootstrap your project. It follows [
 
 The generator can also run directly. See the [package usage guide](saas-foundation/README.md) for commands and validation.
 
+## Delivery policy
+
+Use the optional `sdlc-management` skill or Restruct SDLC for delivery lifecycle,
+Git-linked provenance and bounded cleanup. Validation follows changed behavior and
+dependencies; full archetype qualification is not the default for application
+feature updates. Existing approved security and input bindings remain mandatory.
+See [validation and closeout](saas-foundation/checklists/verification.md#proportionate-validation-and-closeout).
+
 ## Requirements
 
 Git, Docker with Compose 2.24 or later, bash, and the GNU shell utilities used by the scripts. Initial image and dependency downloads need network access. Project builds and tests run in containers; host Go, Python, Node, PostgreSQL, Redis, and MinIO installations are not required.

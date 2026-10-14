@@ -27,3 +27,28 @@ validation/run.sh all --denylist <file> --repo-allow '<regex>' --report-dir <dir
 ## What a pass does not prove
 
 The later foundation stages in `docs/foundation/FOLLOW-UP.md` (identity provider integration, the production policy engine, migrations, audit wiring, MCP mounting, domains, onboarding, labels, operations controls), production security, or SOC 2 compliance.
+
+## Proportionate validation and closeout
+
+Choose checks for changed behavior and its dependencies. The full package harness
+qualifies the renderer, fixtures and portability; it is not a default test suite
+for every feature in a generated application. Keep the suite requirements above
+for package qualification and retain relevant isolation/security coverage. Changes
+to CI or a test harness need their covering controls; expensive CI meta-tests need
+not accompany unrelated application changes. Unknown impact takes the broader path.
+The adopting repository's actual CI selector and approved Goal requirements govern
+what runs; this guidance installs no selector or new CI implementation.
+
+Use Git commit/path references for committed source and compact Results recording
+commands, outcomes (including failures), relevant runtime inputs and required proof.
+Use additional snapshots only for relevant inputs Git does not identify; preserve
+existing approved manifests/bindings. When a management skill governs the repository,
+follow its target-delta/reconciliation policy; do not restart unchanged tests solely
+because a status document or commit SHA changed.
+
+At verified terminal closeout, retain the compact Result and necessary proof; purge
+disposable task-owned bulk logs, reports and build caches under the repository's
+cleanup policy. Record ownership when creating resources, remove only attributable
+unused resources, and retain active/shared data, secrets and unproven items. Preserve
+a compact cleanup receipt and item-specific holds instead of creating a second
+resource registry or a new cleanup campaign.

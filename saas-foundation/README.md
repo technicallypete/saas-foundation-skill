@@ -24,6 +24,16 @@ The renderer preserves existing files. Conflicts produce proposals under `.arche
 
 After rendering, follow the destination's `docs/foundation/GETTING-STARTED.md` to create a local `.env` with disposable credentials, start services, and run checks. Keep credentials out of Git. See the [configuration contract](references/configuration.md) and [Docker runtime guide](references/docker-runtime.md).
 
+## Delivery workflow
+
+Use `sdlc-management` or Restruct SDLC when a supervisor/coordinator delivery workflow
+is wanted. It owns lifecycle policy; this package owns foundation architecture and
+renderer safety. Ordinary application features use checks for their changed behavior,
+not an automatic rerun of the entire generator qualification suite. Keep compact
+Git-linked outcomes and purge disposable task-owned evidence after verified closeout.
+See [validation and closeout](checklists/verification.md#proportionate-validation-and-closeout);
+existing approved security checks and provenance bindings remain required.
+
 ## Validate the skill
 
 The harness supports `static`, `generator`, `intelligence`, `isolation`, `trials`, and `all`. Supply a nonempty denylist outside the package containing private project brand/domain terms that must not appear in this generic skill or its output.
